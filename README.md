@@ -9,7 +9,7 @@
 | `databricks.yml` | 번들 정의, 변수, 대상 환경(dev, prod) |
 | `resources/deploy_genie_space.job.yml` | 배포 노트북을 실행하는 job |
 | `src/genie_space.json` | 에이전트 구성 원본 (테이블, 볼륨, 지침, 예제 SQL, 시작 질문, 벤치마크) |
-| `src/deploy_genie_space.py` | 카탈로그·스키마를 치환한 뒤 Genie API로 에이전트를 생성하거나 업데이트 |
+| `src/deploy_genie_space` (노트북) | 카탈로그·스키마를 치환한 뒤 Genie API로 에이전트를 생성하거나 업데이트 |
 
 번들 파일은 `card_spend_genie_bundle/` 폴더에 있습니다. 아래 경로는 이 폴더 기준입니다.
 
@@ -39,7 +39,7 @@ databricks bundle run deploy_genie_space -t dev
 
 처음 실행하면 새 에이전트 ID가 출력됩니다. 이 ID를 `space_id` 변수에 지정하면 이후 배포는 같은 에이전트를 업데이트합니다.
 
-CLI 없이 배포하려면 `src/deploy_genie_space.py` 노트북을 열고 위젯 값을 채워 직접 실행합니다. `config_path`에는 `genie_space.json`의 전체 `/Workspace/...` 경로를 넣으세요.
+CLI 없이 배포하려면 `src/deploy_genie_space` 노트북을 열고 위젯 값을 채워 직접 실행합니다. `config_path`에는 `genie_space.json`의 전체 `/Workspace/...` 경로를 넣으세요.
 
 ## 구성 변경 절차
 

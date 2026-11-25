@@ -7,7 +7,7 @@ resources:
       tasks:
         - task_key: deploy_genie_space
           notebook_task:
-            notebook_path: ../src/deploy_genie_space.py
+            notebook_path: ../src/deploy_genie_space.ipynb
             base_parameters:
               config_path: ${workspace.file_path}/src/genie_space.json
               warehouse_id: ${var.warehouse_id}
