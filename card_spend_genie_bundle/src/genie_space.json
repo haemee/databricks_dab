@@ -1,0 +1,72 @@
+{
+  "source_room_id": "01f1e2ef2bb918eab7d3b97698949094",
+  "source_checkpoint": "/Users/haemee.park@databricks.com/genie-checkpoints/2026-11-25T04-47-17-503Z-3d29f5d0-f996-46f4-8e15-5aa65d301dbf.json",
+  "title": "카드 소비 분석 (검증 완료)",
+  "description": "품질 검사 데모용: 벤치마크 6문항(정답 SQL)과 모니터링 기록이 있는 정식 에이전트. hpark_admin_catalog.fintech_demo 테이블·공식 KPI·customer_docs 문서 사용.",
+  "serialized_space": {
+    "version": 2,
+    "config": {
+      "sample_questions": [
+        {"id": "a1c0000000000000000000000000c001", "question": ["지난달 카드 사용액이 가장 많이 늘어난 연령대는?"]},
+        {"id": "a1c0000000000000000000000000c002", "question": ["그 연령대는 주로 어떤 업종에 썼고, 상담 기록이나 캠페인 안내 문서에서 원인을 찾을 수 있어?"]},
+        {"id": "a1c0000000000000000000000000c003", "question": ["10월 지점별 카드 사용액을 보여줘"]}
+      ]
+    },
+    "data_sources": {
+      "tables": [
+        {"identifier": "hpark_admin_catalog.fintech_demo.branches", "description": ["지점 정보 (지점명, 지역)"]},
+        {"identifier": "hpark_admin_catalog.fintech_demo.card_kpi", "description": ["카드 사업 공식 KPI 지표 뷰 (재무팀 승인 2026.3). 카드 사용액, 결제 건수, 결제 고객 수, 활성 고객 수"]},
+        {"identifier": "hpark_admin_catalog.fintech_demo.card_transactions", "description": ["카드 결제 거래 (2026.5.1~2026.11.15), amount 단위는 원"]},
+        {"identifier": "hpark_admin_catalog.fintech_demo.customers", "description": ["카드 고객 정보 (합성 데이터, 개인정보 마스킹)"]}
+      ],
+      "volumes": [
+        {"path": "/Volumes/hpark_admin_catalog/fintech_demo/customer_docs", "description": ["상담기록 월간요약(2026-09, 2026-10), 상담메모 사례모음(2026-10), 트래블플러스카드 상품안내, 가을여행 캐시백 캠페인 안내(2026-10)"]}
+      ]
+    },
+    "instructions": {
+      "text_instructions": [
+        {
+          "id": "fbdf71ca76884780a14a842c228dc5cc",
+          "content": [
+            "항상 한국어로 답변하세요. 숫자는 테이블에서 계산하고, 소비 변화의 원인과 배경은 customer_docs 볼륨의 문서(상담 기록 월간요약, 상담메모 사례모음, 상품 안내, 캠페인 안내)를 근거로 인용하세요.\n",
+            "카드 사용액, 결제 건수, 결제 고객 수, 활성 고객 수는 공식 지표 뷰 card_kpi의 measure(MEASURE() 사용)를 우선 사용하세요. 카드 사용액 = 카드 결제 금액 합계(원). 활성 고객 수는 기준일(데이터 최신일 2026-11-15)로부터 최근 3개월 안에 카드 결제를 1건 이상 한 고객 수이며, 선택 기간에 결제한 '결제 고객 수'와 다릅니다.\n",
+            "연령대·업종·결제 채널·지점·지역·고객 등급 분석은 card_kpi의 해당 dimension을 사용하세요.\n",
+            "거래 데이터는 2026-11-15까지만 있으므로 '지난달'은 데이터가 모두 있는 마지막 달인 2026년 10월로 보고, 증감은 직전 달(9월)과 비교하세요.\n",
+            "테이블 조인: card_transactions.customer_id = customers.customer_id, card_transactions.branch_id = branches.branch_id, customers.branch_id = branches.branch_id.\n",
+            "customers의 이름·주민번호·카드번호·전화번호는 마스킹된 값이며, 요청이 없으면 답변에 노출하지 마세요."
+          ]
+        }
+      ],
+      "example_question_sqls": [
+        {
+          "id": "1d0680be9ea649b0a38ad4f95dc00f08",
+          "question": ["지난달 카드 사용액이 가장 많이 늘어난 연령대는?"],
+          "sql": [
+            "WITH m AS (\n",
+            "  SELECT `연령대`, date_trunc('MONTH', `거래월`) AS `월`, MEASURE(`카드 사용액`) AS `사용액`\n",
+            "  FROM `hpark_admin_catalog`.`fintech_demo`.`card_kpi`\n",
+            "  WHERE `거래월` >= TIMESTAMP'2026-09-01' AND `거래월` < TIMESTAMP'2026-11-01'\n",
+            "  GROUP BY ALL\n",
+            ")\n",
+            "SELECT `연령대`,\n",
+            "  SUM(CASE WHEN `월` = TIMESTAMP'2026-09-01' THEN `사용액` END) AS `9월_사용액`,\n",
+            "  SUM(CASE WHEN `월` = TIMESTAMP'2026-10-01' THEN `사용액` END) AS `10월_사용액`,\n",
+            "  SUM(CASE WHEN `월` = TIMESTAMP'2026-10-01' THEN `사용액` END) - SUM(CASE WHEN `월` = TIMESTAMP'2026-09-01' THEN `사용액` END) AS `증가액`,\n",
+            "  ROUND(TRY_DIVIDE(SUM(CASE WHEN `월` = TIMESTAMP'2026-10-01' THEN `사용액` END), SUM(CASE WHEN `월` = TIMESTAMP'2026-09-01' THEN `사용액` END)) * 100 - 100, 1) AS `증가율_pct`\n",
+            "FROM m GROUP BY `연령대` ORDER BY `증가액` DESC"
+          ]
+        }
+      ]
+    },
+    "benchmarks": {
+      "questions": [
+        {"id": "b0000000000000000000000000000006", "question": ["20대의 9월과 10월 해외결제 사용액은?"], "answer": [{"format": "SQL", "content": ["SELECT DATE_TRUNC('MONTH', t.txn_date) AS month, SUM(t.amount) AS amount FROM hpark_admin_catalog.fintech_demo.card_transactions t JOIN hpark_admin_catalog.fintech_demo.customers c ON t.customer_id = c.customer_id WHERE c.age BETWEEN 20 AND 29 AND t.merchant_category = '해외결제' AND t.txn_date BETWEEN DATE'2026-09-01' AND DATE'2026-10-31' GROUP BY 1 ORDER BY 1"]}]},
+        {"id": "b0000000000000000000000000000005", "question": ["10월 결제 건수가 많은 업종 상위 3개는?"], "answer": [{"format": "SQL", "content": ["SELECT merchant_category, COUNT(*) AS txn_count FROM hpark_admin_catalog.fintech_demo.card_transactions WHERE txn_date BETWEEN DATE'2026-10-01' AND DATE'2026-10-31' GROUP BY 1 ORDER BY 2 DESC LIMIT 3"]}]},
+        {"id": "b0000000000000000000000000000004", "question": ["10월 지점별 카드 사용액을 큰 순서로 보여줘"], "answer": [{"format": "SQL", "content": ["SELECT b.branch_name, SUM(t.amount) AS amount FROM hpark_admin_catalog.fintech_demo.card_transactions t JOIN hpark_admin_catalog.fintech_demo.branches b ON t.branch_id = b.branch_id WHERE t.txn_date BETWEEN DATE'2026-10-01' AND DATE'2026-10-31' GROUP BY 1 ORDER BY 2 DESC"]}]},
+        {"id": "b0000000000000000000000000000003", "question": ["지금 활성 고객은 몇 명이야?"], "answer": [{"format": "SQL", "content": ["SELECT MEASURE(`활성 고객 수`) AS active_customers FROM hpark_admin_catalog.fintech_demo.card_kpi"]}]},
+        {"id": "b0000000000000000000000000000002", "question": ["9월 대비 10월 카드 사용액 증가율이 가장 큰 연령대와 증가율은?"], "answer": [{"format": "SQL", "content": ["WITH m AS (SELECT CONCAT(CAST(FLOOR(c.age / 10) * 10 AS INT), '대') AS age_band, SUM(CASE WHEN t.txn_date BETWEEN DATE'2026-09-01' AND DATE'2026-09-30' THEN t.amount END) AS sep_amt, SUM(CASE WHEN t.txn_date BETWEEN DATE'2026-10-01' AND DATE'2026-10-31' THEN t.amount END) AS oct_amt FROM hpark_admin_catalog.fintech_demo.card_transactions t JOIN hpark_admin_catalog.fintech_demo.customers c ON t.customer_id = c.customer_id GROUP BY 1) SELECT age_band, ROUND((oct_amt - sep_amt) * 100.0 / sep_amt, 1) AS growth_pct FROM m ORDER BY growth_pct DESC LIMIT 1"]}]},
+        {"id": "b0000000000000000000000000000001", "question": ["10월 연령대별 카드 사용액은?"], "answer": [{"format": "SQL", "content": ["SELECT CONCAT(CAST(FLOOR(c.age / 10) * 10 AS INT), '대') AS age_band, SUM(t.amount) AS amount FROM hpark_admin_catalog.fintech_demo.card_transactions t JOIN hpark_admin_catalog.fintech_demo.customers c ON t.customer_id = c.customer_id WHERE t.txn_date BETWEEN DATE'2026-10-01' AND DATE'2026-10-31' GROUP BY 1 ORDER BY 1"]}]}
+      ]
+    }
+  }
+}

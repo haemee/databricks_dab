@@ -1,0 +1,52 @@
+# 카드 소비 분석 Genie 에이전트 배포 번들
+# 구성 원본: src/genie_space.json (2026-11-25 백업 파일 기준)
+# 배포: databricks bundle deploy -t dev && databricks bundle run deploy_genie_space -t dev
+
+bundle:
+  name: card_spend_genie
+
+include:
+  - resources/*.yml
+
+variables:
+  warehouse_id:
+    description: Genie 에이전트가 사용할 SQL 웨어하우스 ID
+    default: 2bf795da43858056
+  source_catalog:
+    description: 구성 파일에 적혀 있는 원본 카탈로그 (치환 기준값, 보통 변경하지 않음)
+    default: hpark_admin_catalog
+  source_schema:
+    description: 구성 파일에 적혀 있는 원본 스키마 (치환 기준값, 보통 변경하지 않음)
+    default: fintech_demo
+  catalog:
+    description: 배포 대상 카탈로그
+    default: hpark_admin_catalog
+  schema:
+    description: 배포 대상 스키마
+    default: fintech_demo
+  space_title:
+    description: 배포될 Genie 에이전트 이름
+    default: 카드 소비 분석 (검증 완료)
+  space_id:
+    description: 업데이트할 기존 Genie 에이전트 ID. 비워 두면 같은 이름의 에이전트를 찾아 업데이트하고, 없으면 새로 생성
+    default: ""
+  parent_path:
+    description: 새 에이전트를 생성할 워크스페이스 폴더
+    default: /Workspace/Users/${workspace.current_user.userName}
+
+targets:
+  dev:
+    mode: development
+    default: true
+    variables:
+      space_title: "[dev] 카드 소비 분석"
+
+  prod:
+    mode: production
+    variables:
+      # 운영 환경 값으로 바꿔서 사용하세요.
+      warehouse_id: <PROD_WAREHOUSE_ID>
+      catalog: <PROD_CATALOG>
+      schema: <PROD_SCHEMA>
+      space_title: 카드 소비 분석
+      parent_path: /Workspace/Shared/genie
