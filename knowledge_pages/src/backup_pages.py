@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "6"
+# ///
 # MAGIC %md
 # MAGIC # Knowledge Pages 백업
 # MAGIC
@@ -7,9 +11,9 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("output_path", "", "JSON 저장 경로 (전체 /Workspace/... 경로)")
+dbutils.widgets.text("output_path", "/Workspace/Users/haemee.park@databricks.com/databricks_dab/knowledge_pages/src/knowledge_pages_2.json", "JSON 저장 경로 (전체 /Workspace/... 경로)")
 dbutils.widgets.text("domain_id", "system-general-domain-05d08df7-ae03-43ad-bbae-14babb530ec0", "도메인 ID")
-dbutils.widgets.text("owner_id", "", "소유자 ID (비우면 도메인 전체)")
+dbutils.widgets.text("owner_id", "7940979634502340", "소유자 ID (비우면 도메인 전체)")
 
 p = {k: dbutils.widgets.get(k).strip() for k in ["output_path", "domain_id", "owner_id"]}
 if not p["output_path"]:
